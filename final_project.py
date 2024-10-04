@@ -4,17 +4,17 @@ import os
 from airflow.decorators import dag
 from airflow.operators.dummy_operator import DummyOperator
 from final_project_operators.stage_redshift import StageToRedshiftOperator
-from final_project_operators.load_fact import LoadFactOperator
-from final_project_operators.load_dimension import LoadDimensionOperator
-from final_project_operators.data_quality import DataQualityOperator
-from udacity.common import final_project_sql_statements
+#from final_project_operators.load_fact import LoadFactOperator
+#from final_project_operators.load_dimension import LoadDimensionOperator
+#from final_project_operators.data_quality import DataQualityOperator
+
 
 
 default_args = {
     'owner': 'udacity',
     'start_date': pendulum.now(),
     'retries':3,
-    'retry_delay':datetime.timedelta(minutes=5),
+    'retry_delay':timedelta(minutes=5),
 }
 
 @dag(
@@ -28,15 +28,17 @@ def final_project():
 
     start_operator = DummyOperator(task_id='Begin_execution')
 
+    
     stage_events_to_redshift = StageToRedshiftOperator(
         task_id='Stage_events',
         redshift_conn_id="redshift_conn",
         aws_credential_id ="aws_credentials",
-        table ="",
-        s3_bucket="",
-        s3_key="",
+        table ="staging_events",
+        s3_bucket="karlla-batista",
+        s3_key="log-data",
+        s3_json_path="log_json_path.json"
     )
-
+    ''''
     stage_songs_to_redshift = StageToRedshiftOperator(
         task_id='Stage_songs',
     )
@@ -65,6 +67,8 @@ def final_project():
         task_id='Run_data_quality_checks',
     )
 
+    
+    '''
     start_operator >> stage_events_to_redshift
 
 final_project_dag = final_project()

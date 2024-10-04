@@ -11,10 +11,9 @@ class StageToRedshiftOperator(BaseOperator):
         FROM '{}'
         ACCESS_KEY_ID '{}'
         SECRET_ACCESS_KEY '{}'
-        IGNOREHEADER {}
-        DELIMITER '{}'
-    """
+        JSON '{}'
 
+    """
 
     @apply_defaults
     def __init__(self,
@@ -23,6 +22,7 @@ class StageToRedshiftOperator(BaseOperator):
                 table ="",
                 s3_bucket="",
                 s3_key="",
+                s3_json_path="",
                 delimeter=",",
                 ignore_headers=1,
                 *args, **kwargs):
@@ -33,6 +33,7 @@ class StageToRedshiftOperator(BaseOperator):
         self.table=table
         self.s3_bucket=s3_bucket
         self.s3_key = s3_key
+        self.s3_json_path = s3_json_path
         self.delimeter=delimeter
         self.ignore_headers=ignore_headers
 
@@ -44,23 +45,37 @@ class StageToRedshiftOperator(BaseOperator):
         aws_connection= metaStoreBackend.get_connection(self.aws_credential_id)
         redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
 
-        try:
-            self.log.info("Conecting to redshift .. ")
-            conn = redshift.get_conn()
-            cursor= conn.cursor()
-            
-            # Executa uma consulta simples para testar a conexão
-            cursor.execute("SELECT 1")
-            result = cursor.fetchone()
-            
-            if result:
-                self.log.info('Conexão com o Redshift estabelecida com sucesso')
-            else:
-                self.log.warning('A consulta não retornou resultados, mas a conexão foi estabelecida')
+        self.log.info("Connecting to redshift .. ")
+        conn = redshift.get_conn()
+        cursor= conn.cursor()
+        
+        # Test connection
+        cursor.execute("SELECT 1")
+        result = cursor.fetchone()
+        
+        if result:
+            self.log.info('Connection to Redshift successfully established')
 
-        except Exception as e:
-            self.log.error(f'Falha ao conectar ao Redshift: {str(e)}')
-            raise
+            self.log.info("Clearing data from destination Redshift table")
+            redshift.run("DELETE FROM {}".format(self.table))
 
+            self.log.info("Copying data from S3 to Redshift")
+            s3_path = "s3://{}/{}".format(self.s3_bucket, self.s3_key)
+            s3_json_path = "s3://{}/{}".format(self.s3_bucket, self.s3_json_path)
+            print("--->",s3_path)
+            print("-->", s3_json_path)
+            formatted_sql = StageToRedshiftOperator.copy_sql.format(
+            self.table,
+            s3_path,
+            aws_connection.login,
+            aws_connection.password,
+            s3_json_path
+            )
+            redshift.run(formatted_sql)
+            
+        else:
+            self.log.warning('Fail to established connection with Redshift')
+
+        
         self.log.info('StageToRedshiftOperator concluído')    
 
