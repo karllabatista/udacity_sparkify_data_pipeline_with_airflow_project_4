@@ -4,7 +4,7 @@ import os
 from airflow.decorators import dag
 from airflow.operators.dummy_operator import DummyOperator
 from final_project_operators.stage_redshift import StageToRedshiftOperator
-#from final_project_operators.load_fact import LoadFactOperator
+from final_project_operators.load_fact import LoadFactOperator
 #from final_project_operators.load_dimension import LoadDimensionOperator
 #from final_project_operators.data_quality import DataQualityOperator
 
@@ -49,11 +49,13 @@ def final_project():
         s3_bucket="karlla-batista",
         s3_static_key='song-data'                    
     )
-    ''''
+    
     load_songplays_table = LoadFactOperator(
         task_id='Load_songplays_fact_table',
+        redshift_conn_id="redshift_conn"
     )
 
+    ''''
     load_user_dimension_table = LoadDimensionOperator(
         task_id='Load_user_dim_table',
     )
@@ -78,5 +80,7 @@ def final_project():
     '''
     start_operator >> stage_events_to_redshift 
     start_operator >> stage_songs_to_redshift
+    stage_events_to_redshift >> load_songplays_table
+    stage_songs_to_redshift >> load_songplays_table
 
 final_project_dag = final_project()
