@@ -16,5 +16,17 @@ WHERE se.page ='NextSong';
 
 SQL_TRUNCATE_TABLE ="TRUNCATE {table}"
 
+SQL_LOAD_USER_DIM_TABLE="""
+INSERT INTO USERS(user_id,first_name,last_name,gender,level)
+SELECT  DISTINCT  COALESCE(NULLIF(sev.userID,0)) as user_id,
+        COALESCE(NULLIF(sev.first_name, ''), 'N/A'),
+        COALESCE(NULLIF(sev.last_name, ''), 'N/A'),
+        COALESCE(NULLIF(sev.gender, ''), 'N/A'),
+        sev.level
+FROM staging_events as sev
+WHERE sev.page ='NextSong';
+"""
 
 
+
+#print(SQL_TRUNCATE_TABLE.format(table="users"))
