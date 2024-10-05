@@ -5,7 +5,7 @@ from airflow.utils.decorators import apply_defaults
 
 class StageToRedshiftOperator(BaseOperator):
     ui_color = '#358140'
-
+    template_fields = ('s3_templated_key',)  
     copy_sql = """
         COPY {}
         FROM '{}'
@@ -14,6 +14,13 @@ class StageToRedshiftOperator(BaseOperator):
         JSON '{}'
 
     """
+    copy_sql_2 = """
+        COPY {}
+        FROM '{}'
+        ACCESS_KEY_ID '{}'
+        SECRET_ACCESS_KEY '{}'
+        FORMAT as JSON 'auto'
+    """
 
     @apply_defaults
     def __init__(self,
@@ -21,10 +28,10 @@ class StageToRedshiftOperator(BaseOperator):
                 aws_credential_id="",
                 table ="",
                 s3_bucket="",
-                s3_key="",
+                s3_static_key="",
                 s3_json_path="",
-                delimeter=",",
-                ignore_headers=1,
+                s3_templated_key="",
+                s3_json_metadatafile =False,
                 *args, **kwargs):
 
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
@@ -32,12 +39,10 @@ class StageToRedshiftOperator(BaseOperator):
         self.aws_credential_id = aws_credential_id
         self.table=table
         self.s3_bucket=s3_bucket
-        self.s3_key = s3_key
+        self.s3_static_key = s3_static_key
         self.s3_json_path = s3_json_path
-        self.delimeter=delimeter
-        self.ignore_headers=ignore_headers
-
-
+        self.s3_templated_key=s3_templated_key
+        self.s3_json_metadatafile=s3_json_metadatafile
 
     def execute(self, context):
         self.log.info('StageToRedshiftOperator not implemented yet')
@@ -59,23 +64,42 @@ class StageToRedshiftOperator(BaseOperator):
             self.log.info("Clearing data from destination Redshift table")
             redshift.run("DELETE FROM {}".format(self.table))
 
-            self.log.info("Copying data from S3 to Redshift")
-            s3_path = "s3://{}/{}".format(self.s3_bucket, self.s3_key)
-            s3_json_path = "s3://{}/{}".format(self.s3_bucket, self.s3_json_path)
+            self.log.info(f"Copying {self.table} data from S3 to Redshift")
+            
+            # Determine which S3 key to use
+            if self.s3_templated_key:
+                s3_path = "s3://{}/{}".format(self.s3_bucket, self.s3_templated_key)
+            else:
+                s3_path = "s3://{}/{}".format(self.s3_bucket, self.s3_static_key)
+                s3_json_path = "s3://{}/{}".format(self.s3_bucket, self.s3_json_path)
+            self.log.info(f"S3 Path: {s3_path}")
+
             print("--->",s3_path)
             print("-->", s3_json_path)
-            formatted_sql = StageToRedshiftOperator.copy_sql.format(
-            self.table,
-            s3_path,
-            aws_connection.login,
-            aws_connection.password,
-            s3_json_path
-            )
+            
+            if self.s3_json_metadatafile:
+                formatted_sql = StageToRedshiftOperator.copy_sql.format(
+                self.table,
+                s3_path,
+                aws_connection.login,
+                aws_connection.password,
+                s3_json_path
+                )
+            else:
+                formatted_sql = StageToRedshiftOperator.copy_sql_2.format(
+                self.table,
+                s3_path,
+                aws_connection.login,
+                aws_connection.password
+                )
+
+            print("--->",formatted_sql)
             redshift.run(formatted_sql)
+
+            self.log.info('StageToRedshiftOperator concluído')    
+
             
         else:
             self.log.warning('Fail to established connection with Redshift')
-
-        
-        self.log.info('StageToRedshiftOperator concluído')    
+            self.log.info('StageToRedshiftOperator failed')    
 

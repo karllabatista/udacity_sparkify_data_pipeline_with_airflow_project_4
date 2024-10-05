@@ -35,14 +35,21 @@ def final_project():
         aws_credential_id ="aws_credentials",
         table ="staging_events",
         s3_bucket="karlla-batista",
-        s3_key="log-data",
+        #s3_templated_key='data/{{ ds }}/log.json',  # Templated path
+        s3_static_key='log-data',                    # Static path
+        s3_json_metadatafile =True,                 
         s3_json_path="log_json_path.json"
     )
-    ''''
+    
     stage_songs_to_redshift = StageToRedshiftOperator(
         task_id='Stage_songs',
+        redshift_conn_id="redshift_conn",
+        aws_credential_id ="aws_credentials",
+        table ="staging_songs",
+        s3_bucket="karlla-batista",
+        s3_static_key='song-data'                    
     )
-
+    ''''
     load_songplays_table = LoadFactOperator(
         task_id='Load_songplays_fact_table',
     )
@@ -69,6 +76,7 @@ def final_project():
 
     
     '''
-    start_operator >> stage_events_to_redshift
+    start_operator >> stage_events_to_redshift 
+    start_operator >> stage_songs_to_redshift
 
 final_project_dag = final_project()
