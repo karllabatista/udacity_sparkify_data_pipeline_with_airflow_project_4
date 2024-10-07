@@ -41,63 +41,66 @@ create a connection in the Connections window. Following the example:
 6. On the Airflow create connection page, enter the following values:
 
 **Connection Id**: Enter redshift.
+
 **Connection Type**: Choose Amazon Redshift.
+
 **Host**: Enter the endpoint of your Redshift Serverless workgroup, excluding the port and schema name at the end. You can find this by selecting your workgroup in the Amazon Redshift console. See where this is located in the screenshot below. IMPORTANT: Make sure to NOT include the port and schema name at the end of the Redshift endpoint string.
+
 **Schema**: Enter dev. This is the Redshift database you want to connect to.
+
 **Login**: Enter awsuser.
+
 **Password**: Enter the password you created when launching Redshift serverless.
+
 **Port**: Enter 5439. Once you've entered these values, select Save.
+
 
 Ex:
 
 ![airflow](assets/ariflow-conn-page.png)
 
-
-
-
-
-# Project Instructions
-
 # Datasets
-For this project, you'll be working with two datasets. Here are the s3 links for each:
 
-Log data: s3://udacity-dend/log_data
-Song data: s3://udacity-dend/song-data
+For this project, it was worked two datasets. Here are the s3 links for each:
 
-# Copy S3 Data (?)
+Log data: **s3://udacity-dend/log_data**
+Song data: **s3://udacity-dend/song-data**
 
-# Project Template
+**Hit**:It is a good idea create your own bucket and transfer this data to him
 
-The project template package contains three major components for the project:
-The dag template has all the imports and task templates in place, but the task dependencies have not been set
-The operators folder with operator templates
-A helper class for the SQL transformations
+# DAG's Configuration
 
-#DAG Graph in the Project Template
-here are 9 tasks in the project template's DAG graph that exist independently: Begin_execution, Load_artist_dim_table, Load_song_dim_table, Load_songplays_fact_table, Load_time_dim_table, Load_user_dim_table, Run_data_quality_checks, Stage_events, and Stage_songs. 
+In the DAG, there are some *default parameters*:
 
-Configuring the DAG
+ - The DAG does not have dependencies on past runs
+- On failure, the task are retried 3 times
+- Retries happen every 5 minutes
+- Catchup is turned off
+- Do not email on retry
 
-In the DAG, add default parameters according to these guidelines
+![fulldag](assets/full-dag.png)
 
-The DAG does not have dependencies on past runs
-On failure, the task are retried 3 times
-Retries happen every 5 minutes
-Catchup is turned off
-Do not email on retry
-In addition, configure the task dependencies so that after the dependencies are set, the graph view follows the flow shown in the image below.
+# Operators 
 
-Completed DAG Dependencies Image Description
-The Begin_execution task should be followed by both Stage_events and Stage_songs. These staging tasks should both be followed by the task Load_songplays_fact_table. Completing the Load_songplays_fact_table should trigger four tasks at the same time: Load_artist_dim_table, Load_song_dim_table, Load_time_dim_table, and Load_user_dim_table. After completing all of these four tasks, the task Run_dadta_quality_checks_should_run. And, finally, run the Stop_execution task.
+This data pepline is made up for three operators: *Stage Operator*,*Fact Operator*,*Dimensions Operator* and *Data Quality Operator*
 
-Building the operators falar deles
+This data pipeline is basead on this project [The Sparkify](https://github.com/karllabatista/udacity_sparkify_dw_project2). So to more information aboute the fact and dimensions table can be found there.
 
-Stage Operator
+**Note**: Before executing this data pipeline in necessary to create stage and final tables.
+In the  directory root there utils/create_tables.py that create all tables. See the script and configure it to run.
 
-Fact and Dimension Operators
+### Stage Operator
 
-Data Quality Operator
+This operator make transfer data from S3 buckes to Redshift stages tables. And it capable load any JSON-formatted files (static and dynamics paths)
 
-implementar uma função que check valores nullos 
+### Fact and Dimension Operators
 
-cria link para o projeto 2
+Fact tables are loaded by this operator.
+This operator executes a sql statement to load the fact table with transformed data.
+
+The same thing happen with Dimensions table. Although, the insert method is runned with truncate-insert mode or appendy-only mode. If the truncate-insert mode is choose every insertion the table will be erased and after be loaded. In other hand, the appendy-only will insert more row to exist table.
+
+
+### Data Quality Operator
+
+The final operator to create is the data quality operator, which runs checks on the data itself. The operator's main functionality is to receive one or more SQL based test cases along with the expected results and execute the tests. For each test, the test result and expected result need to be checked, and if there is no match, the operator should raise an exception, and the task should retry and fail eventually.
