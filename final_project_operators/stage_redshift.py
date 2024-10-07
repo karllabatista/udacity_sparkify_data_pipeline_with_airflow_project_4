@@ -45,7 +45,7 @@ class StageToRedshiftOperator(BaseOperator):
         self.s3_json_metadatafile=s3_json_metadatafile
 
     def execute(self, context):
-        self.log.info('StageToRedshiftOperator not implemented yet')
+        self.log.info('Starting StageToRedshiftOperator ..')
         metaStoreBackend = MetastoreBackend()
         aws_connection= metaStoreBackend.get_connection(self.aws_credential_id)
         redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
@@ -96,7 +96,7 @@ class StageToRedshiftOperator(BaseOperator):
             print("--->",formatted_sql)
             redshift.run(formatted_sql)
 
-            self.log.info('StageToRedshiftOperator concluído')    
+            self.log.info('StageToRedshiftOperator DONE!')    
 
             
         else:
