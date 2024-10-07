@@ -104,3 +104,35 @@ The same thing happen with Dimensions table. Although, the insert method is runn
 ### Data Quality Operator
 
 The final operator to create is the data quality operator, which runs checks on the data itself. The operator's main functionality is to receive one or more SQL based test cases along with the expected results and execute the tests. For each test, the test result and expected result need to be checked, and if there is no match, the operator should raise an exception, and the task should retry and fail eventually.
+
+## How to run
+### Prerequistes
+
+To run the dag is necessary change the path of DAGs in *airflow.cfg*. And search for "*dags_folder*" variable. See the example below:
+
+*dags_folder = /home/udacity/airflow/dags/project/udacity_sparkify_data_pipeline_with_airflow_project_4*
+
+
+**Run in a terminal**
+
+```python
+
+# create a virtual environment
+python3 -m venv env
+
+#activate virtual environment
+source env/bin/activate
+
+#install minimal prerequisites
+pip3 install -r requirements.txt
+
+#execute the scheduler
+airflow scheduler
+```
+
+**Run in in other terminal**
+
+```python
+#opeN the Airflow UI
+airflow webserver
+```
