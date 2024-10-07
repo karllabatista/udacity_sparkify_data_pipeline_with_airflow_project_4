@@ -136,3 +136,14 @@ airflow scheduler
 #opeN the Airflow UI
 airflow webserver
 ```
+
+**Run the DAG**
+
+Open the Airflow UI in:
+http://0.0.0.0:8080/home
+
+Search for final_project DAG in the DAG list:
+
+![dag final_project](assets/dag-fp.png)
+
+And run the DAG.
