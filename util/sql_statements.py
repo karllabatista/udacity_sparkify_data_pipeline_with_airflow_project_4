@@ -28,5 +28,33 @@ WHERE sev.page ='NextSong';
 """
 
 
-
-#print(SQL_TRUNCATE_TABLE.format(table="users"))
+SQL_LOAD_SONGS_DIM_TABLE="""
+INSERT INTO SONGS(song_id,title,artist_id,year,duration)
+SELECT  DISTINCT ss.song_id,
+        ss.title,
+        ss.artist_id,
+        ss.year,
+        CAST(ss.duration AS FLOAT) AS duration
+FROM staging_songs as ss;
+""" 
+SQL_LOAD_ARTISTS_DIM_TABLE="""
+INSERT INTO artists(artist_id,name,location,latitude,longitude)
+SELECT  DISTINCT ss.artist_id AS artist_id,
+        COALESCE(NULLIF(ss.artist_name,''),'Unknown')  AS name,
+        ss.artist_location AS location,
+        CAST(ss.artist_latitude AS FLOAT) AS latitude,
+        CAST(ss.artist_longitude AS FLOAT) AS longitude
+FROM staging_songs as ss;
+"""
+SQL_LOAD_TIME_DIM_TABLE="""
+INSERT INTO time(start_time,hour,day,week,month,year,weekday)
+SELECT DISTINCT TIMESTAMP 'epoch' + ts / 1000 * INTERVAL '1 second' AS start_time,
+    EXTRACT(hour FROM start_time) as hour,
+    EXTRACT(day FROM start_time) as day,
+    EXTRACT(week FROM start_time) as week,
+    EXTRACT(month FROM start_time) as month,
+    EXTRACT(year FROM start_time) as year ,
+    EXTRACT(weekday FROM start_time) as weekday
+FROM staging_events AS sev
+WHERE sev.page='NextSong';
+"""
