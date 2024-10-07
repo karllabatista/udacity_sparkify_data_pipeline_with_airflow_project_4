@@ -90,7 +90,8 @@ def final_project():
         params={'tables':['users','songs','artists','time']}
     )
     
-    
+    end_operator = DummyOperator(task_id='end_execution')
+
     
     start_operator >> stage_events_to_redshift 
     start_operator >> stage_songs_to_redshift
@@ -100,6 +101,7 @@ def final_project():
     load_songplays_table >> load_song_dimension_table   >>  run_quality_checks
     load_songplays_table >> load_artist_dimension_table >>  run_quality_checks
     load_songplays_table >> load_time_dimension_table   >>  run_quality_checks
-
-
+    run_quality_checks >> end_operator
+    
+    
 final_project_dag = final_project()
