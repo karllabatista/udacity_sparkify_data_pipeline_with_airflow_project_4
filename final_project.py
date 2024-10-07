@@ -83,21 +83,23 @@ def final_project():
         insert_mode="truncate-insert",
         table="time" 
     )
-    '''
+    
     run_quality_checks = DataQualityOperator(
         task_id='Run_data_quality_checks',
+        redshift_conn_id="redshift_conn",
+        params={'tables':['users','songs','artists','time']}
     )
-    '''
+    
     
     
     start_operator >> stage_events_to_redshift 
     start_operator >> stage_songs_to_redshift
     stage_events_to_redshift >> load_songplays_table
     stage_songs_to_redshift >> load_songplays_table
-    load_songplays_table >> load_user_dimension_table
-    load_songplays_table >> load_song_dimension_table
-    load_songplays_table >> load_artist_dimension_table
-    load_songplays_table >> load_time_dimension_table
+    load_songplays_table >> load_user_dimension_table   >>  run_quality_checks
+    load_songplays_table >> load_song_dimension_table   >>  run_quality_checks
+    load_songplays_table >> load_artist_dimension_table >>  run_quality_checks
+    load_songplays_table >> load_time_dimension_table   >>  run_quality_checks
 
 
 final_project_dag = final_project()
